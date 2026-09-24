@@ -296,12 +296,12 @@ button {
 }
 .count-obj {
   position: relative;
-  width: clamp(64px, 18vw, 96px);
-  height: clamp(64px, 18vw, 96px);
+  width: clamp(64px, 18vmin, 130px);
+  height: clamp(64px, 18vmin, 130px);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.75);
   box-shadow: var(--shadow);
-  font-size: clamp(40px, 11vw, 60px);
+  font-size: clamp(40px, 11vmin, 80px);
   animation: pop-in 0.4s var(--d) both cubic-bezier(0.3, 1.6, 0.6, 1);
 }
 .count-obj.counted {

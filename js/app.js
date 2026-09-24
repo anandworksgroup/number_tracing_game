@@ -170,4 +170,4 @@ renderHome();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
-window.__app = { openTrace, tracer, show, state };
+window.__app = { openTrace, tracer, counter, show, state };

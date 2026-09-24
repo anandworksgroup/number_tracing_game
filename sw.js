@@ -1,5 +1,5 @@
 // Offline cache: serve app files from cache, refresh them in the background.
-const CACHE = 'trace123-v1';
+const CACHE = 'trace123-v2';
 const ASSETS = [
   './',
   'index.html',
@@ -15,6 +15,7 @@ const ASSETS = [
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
+  'icons/maskable-512.png',
 ];
 
 self.addEventListener('install', (e) => {

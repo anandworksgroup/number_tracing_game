@@ -28,8 +28,27 @@ npm start        # serves on http://localhost:8080
 npm test         # unit tests for digit stroke geometry
 ```
 
-No build step or dependencies: it is plain HTML, CSS and ES modules.
+No build step and no runtime dependencies: it is plain HTML, CSS and ES modules.
 You can host it on any static web server, for example GitHub Pages.
+
+## App icon and Play Store graphics
+
+```bash
+npm install                  # dev tools: Playwright and the Baloo 2 font
+npx playwright install chromium   # first time only, if Chromium isn't installed yet
+npm run store-assets
+```
+
+`tools/store-assets.mjs` draws the app icon from the same stroke paths the child traces, then
+drives the real app with Playwright to take screenshots. It writes:
+
+- `icons/`: app icons (`icon.svg`, `icon-192.png`, `icon-512.png`, `maskable-512.png`)
+- `store/icon-512.png`: Play Store icon
+- `store/feature-graphic.jpg`: 1024 × 500 feature graphic
+- `store/phone/`, `store/tablet-7/`, `store/tablet-10/`: framed screenshots with captions
+
+Re-run it after changing the app so the store graphics stay current.
+`store/listing.md` has draft store text (name, descriptions, category, content rating notes).
 
 ## Installing on Android / publishing
 
@@ -48,3 +67,5 @@ You can host it on any static web server, for example GitHub Pages.
 | `js/audio.js` | Synthesized sound effects and speech |
 | `js/app.js` | Screens, navigation and saved progress |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline support and install metadata |
+| `tools/store-assets.mjs` | Generates icons, screenshots and the feature graphic |
+| `store/` | Google Play graphics and listing text |
