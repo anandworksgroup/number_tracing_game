@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#7c5ce6" />
+    <meta name="description" content="Learn to write 123: trace, count and pop numbers. A preschool numbers game." />
+    <title>123 Trace &amp; Count</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Home -->
+    <section class="screen active" id="home">
+      <div class="home-top">
+        <div class="pill">⭐ <span id="home-stars">0</span></div>
+        <div class="home-toggles">
+          <button class="round" id="toggle-sound" aria-label="Sound effects">🔊</button>
+          <button class="round" id="toggle-voice" aria-label="Voice">🗣️</button>
+        </div>
+      </div>
+      <h1 class="logo"><span>1</span><span>2</span><span>3</span></h1>
+      <p class="tagline">Trace &amp; Count</p>
+      <nav class="menu">
+        <button class="big-btn c1" data-go="pick"><i>✏️</i>Trace</button>
+        <button class="big-btn c2" data-go="count"><i>🍎</i>Count</button>
+        <button class="big-btn c3" data-go="pop"><i>🎈</i>Pop</button>
+      </nav>
+      <button class="link" id="reset">Parents: reset progress</button>
+    </section>
+
+    <!-- Number picker -->
+    <section class="screen" id="pick">
+      <header class="bar">
+        <button class="round" data-go="home" aria-label="Back">⬅️</button>
+        <h2>Pick a number</h2>
+        <span class="round ghost"></span>
+      </header>
+      <div class="grid" id="pick-grid"></div>
+    </section>
+
+    <!-- Trace -->
+    <section class="screen" id="trace">
+      <header class="bar">
+        <button class="round" data-go="pick" aria-label="Back">⬅️</button>
+        <h2><span id="trace-num">0</span> · <span id="trace-word">zero</span></h2>
+        <button class="round" id="trace-say" aria-label="Say the number">🔈</button>
+      </header>
+      <div class="board">
+        <button class="side" id="trace-prev" aria-label="Previous number">‹</button>
+        <canvas id="trace-canvas"></canvas>
+        <button class="side" id="trace-next" aria-label="Next number">›</button>
+      </div>
+      <footer class="tools">
+        <button class="round" id="trace-help" aria-label="Show me">👆</button>
+        <div class="palette" id="palette"></div>
+        <button class="round" id="trace-clear" aria-label="Start over">🔄</button>
+      </footer>
+    </section>
+
+    <!-- Count -->
+    <section class="screen" id="count">
+      <header class="bar">
+        <button class="round" data-go="home" aria-label="Back">⬅️</button>
+        <h2 class="count-prompt">Tap to count!</h2>
+        <span class="round ghost"></span>
+      </header>
+      <div class="count-field"></div>
+      <div class="count-choices"></div>
+    </section>
+
+    <!-- Balloon pop -->
+    <section class="screen" id="pop">
+      <header class="bar">
+        <button class="round" data-go="home" aria-label="Back">⬅️</button>
+        <h2>Pop the <span class="balloon-target">0</span></h2>
+        <button class="round balloon-say" aria-label="Say it again">🔈</button>
+      </header>
+      <div class="balloon-meter"></div>
+      <div class="sky"></div>
+    </section>
+
+    <!-- Reward popup -->
+    <div class="reward" id="reward" hidden>
+      <div class="reward-card">
+        <div class="reward-stars"></div>
+        <div class="reward-title">Great job!</div>
+        <div class="reward-items"></div>
+        <div class="reward-actions">
+          <button class="big-btn small c2" data-act="again">🔄</button>
+          <button class="big-btn small c1" data-act="next">➡️</button>
+        </div>
+      </div>
+    </div>
+    <canvas id="confetti"></canvas>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

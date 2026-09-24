@@ -1,0 +1,11 @@
+{
+  "name": "number-tracing-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Learn to write 123 – number tracing and counting game for preschoolers (PWA).",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve -l 8080 .",
+    "test": "node --test tests/*.test.js"
+  }
+}
