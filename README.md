@@ -6,6 +6,9 @@ All art, sounds and code are original: the graphics are drawn in code or use emo
 sound effects are synthesized with Web Audio, and the numbers are spoken with the device's
 speech engine.
 
+There is also a native **Flutter app** for Android and iOS in [`flutter_app/`](flutter_app/README.md),
+with the same games. Use it to publish on Google Play.
+
 ## Games
 
 - **✏️ Trace** – trace the numbers 0–20 stroke by stroke.
@@ -53,8 +56,7 @@ Re-run it after changing the app so the store graphics stay current.
 ## Installing on Android / publishing
 
 - **Install as an app:** open the hosted URL in Chrome and choose *Add to Home screen*.
-- **Google Play:** wrap the hosted PWA with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap)
-  (Trusted Web Activity) or [Capacitor](https://capacitorjs.com/) to produce an `.aab`.
+- **Google Play:** build the Flutter app (`flutter build appbundle`, see [`flutter_app/README.md`](flutter_app/README.md)).
 
 ## Project layout
 
@@ -69,3 +71,4 @@ Re-run it after changing the app so the store graphics stay current.
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline support and install metadata |
 | `tools/store-assets.mjs` | Generates icons, screenshots and the feature graphic |
 | `store/` | Google Play graphics and listing text |
+| `flutter_app/` | Native Android/iOS app (Flutter) |

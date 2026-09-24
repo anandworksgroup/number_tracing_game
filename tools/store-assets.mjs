@@ -85,8 +85,11 @@ function starPoints(cx, cy, R, r) {
 }
 
 // "123" drawn with the same stroke paths the child traces in the app.
-function iconSvg({ rounded }) {
-  const s = 1.08;
+// Android adaptive icons use separate layers: `background: false` gives the
+// foreground only, `foreground: false` the background only, and `safe` shrinks
+// the artwork into the adaptive icon's safe zone.
+function iconSvg({ rounded, background = true, foreground = true, safe = false }) {
+  const s = safe ? 0.8 : 1.08;
   const w = 100 + 2 * DIGIT_ADVANCE;
   const h = 140;
   const tx = 256 - (w * s) / 2;
@@ -101,17 +104,21 @@ function iconSvg({ rounded }) {
       <stop offset="1" stop-color="#5a3bc4"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512"${rounded ? ' rx="112"' : ''} fill="url(#bg)"/>
-  <circle cx="256" cy="266" r="200" fill="#ffffff" opacity="0.1"/>
-  <g transform="translate(${tx.toFixed(1)} ${ty.toFixed(1)}) scale(${s})" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  ${background ? `<rect width="512" height="512"${rounded ? ' rx="112"' : ''} fill="url(#bg)"/>
+  <circle cx="256" cy="266" r="200" fill="#ffffff" opacity="0.1"/>` : ''}
+  ${foreground ? `<g transform="translate(${tx.toFixed(1)} ${ty.toFixed(1)}) scale(${s})" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <g transform="translate(0 6)">${layer(() => 'stroke="#2a1b66" stroke-opacity="0.35" stroke-width="40"')}</g>
     ${layer(() => 'stroke="#ffffff" stroke-width="40"')}
     ${layer((p) => `stroke="${p.c}" stroke-width="27"`)}
   </g>
-  <polygon points="${starPoints(392, 126, 40, 17)}" fill="#ffd23f" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+  ${
+    safe
+      ? `<polygon points="${starPoints(352, 178, 30, 13)}" fill="#ffd23f" stroke="#ffffff" stroke-width="6" stroke-linejoin="round"/>`
+      : `<polygon points="${starPoints(392, 126, 40, 17)}" fill="#ffd23f" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
   <circle cx="128" cy="400" r="9" fill="#ffffff" opacity="0.8"/>
   <circle cx="408" cy="392" r="6" fill="#ffffff" opacity="0.7"/>
-  <circle cx="112" cy="136" r="6" fill="#ffffff" opacity="0.7"/>
+  <circle cx="112" cy="136" r="6" fill="#ffffff" opacity="0.7"/>`
+  }` : ''}
 </svg>
 `;
 }
@@ -348,6 +355,17 @@ async function main() {
     await renderSvg(browser, rounded, 512, path.join(ICONS, 'icon-512.png'), { transparent: true });
     await renderSvg(browser, square, 512, path.join(ICONS, 'maskable-512.png'), { transparent: false });
     await renderSvg(browser, square, 512, path.join(STORE, 'icon-512.png'), { transparent: false });
+
+    // Flutter launcher icons (see flutter_app/pubspec.yaml, flutter_launcher_icons).
+    const flutterIcons = path.join(ROOT, 'flutter_app/assets/icon');
+    await fs.mkdir(flutterIcons, { recursive: true });
+    await renderSvg(browser, square, 1024, path.join(flutterIcons, 'icon.png'), { transparent: false });
+    await renderSvg(browser, iconSvg({ rounded: false, background: false, safe: true }), 1024, path.join(flutterIcons, 'foreground.png'), {
+      transparent: true,
+    });
+    await renderSvg(browser, iconSvg({ rounded: false, foreground: false }), 1024, path.join(flutterIcons, 'background.png'), {
+      transparent: false,
+    });
     console.log('icons done');
 
     let phoneTrace;
