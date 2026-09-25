@@ -171,4 +171,37 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const Key('reward-title'))).data, 'Super popping!');
     expect(progress.trophies, 1);
   });
+
+  group('parents area', () {
+    Future<int> openGate(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('parents')));
+      await settle(tester);
+      final q = tester.widget<Text>(find.byKey(const Key('gate-question'))).data!;
+      final m = RegExp(r'(\d+) × (\d+)').firstMatch(q)!;
+      return int.parse(m[1]!) * int.parse(m[2]!);
+    }
+
+    testWidgets('a wrong answer keeps the parents panel closed', (tester) async {
+      await pumpApp(tester, saved: {'trace123': '{"stars":{"1":3}}'});
+      final answer = await openGate(tester);
+      await tester.tap(keyStartsWith('gate-answer-', except: 'gate-answer-$answer').first);
+      await settle(tester);
+      expect(find.byKey(const Key('privacy-summary')), findsNothing);
+      expect(find.byKey(const Key('gate-question')), findsNothing);
+    });
+
+    testWidgets('the right answer shows privacy info and allows a reset', (tester) async {
+      final progress = await pumpApp(tester, saved: {'trace123': '{"stars":{"1":3,"2":2}}'});
+      final answer = await openGate(tester);
+      await tester.tap(find.byKey(Key('gate-answer-$answer')));
+      await settle(tester);
+      expect(find.byKey(const Key('privacy-summary')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('reset-progress')));
+      await settle(tester);
+      await tester.tap(find.byKey(const Key('reset-confirm')));
+      await settle(tester);
+      expect(progress.stars, isEmpty);
+    });
+  });
 }

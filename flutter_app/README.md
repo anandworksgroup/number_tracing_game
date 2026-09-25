@@ -54,10 +54,12 @@ flutter analyze
 Without `key.properties`, release builds are signed with the debug key, which is fine for
 testing but not accepted by Play.
 
-The application ID is `com.anandworksgroup.number_tracing_game`. It can't be changed after
+The application ID is `com.number_tracing_game`. It can't be changed after
 the first upload. Bump `version:` in `pubspec.yaml` (e.g. `1.0.1+2`) for every new upload.
 
-Store graphics and listing text are in `../store/`.
+Store graphics, listing text and a Play policy checklist are in `../store/listing.md`. The
+privacy policy is `../privacy.html`; publish it (e.g. with GitHub Pages) and enter its URL in
+the Play Console.
 
 ## Icons and sounds
 
@@ -75,4 +77,5 @@ Store graphics and listing text are in `../store/`.
 | `lib/src/screens/` | Home, number picker, tracing, count and balloon screens |
 | `lib/src/reward.dart` | Reward popup with stars, counting and confetti |
 | `lib/src/audio.dart`, `lib/src/progress.dart` | Sound, speech and saved progress |
+| `lib/src/parents.dart` | Parental gate, privacy summary and progress reset |
 | `test/` | Tracing logic tests and widget tests that play each game |

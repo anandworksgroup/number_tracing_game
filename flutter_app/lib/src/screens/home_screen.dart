@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app.dart';
 import '../audio.dart';
 import '../ui.dart';
+import '../parents.dart';
 import 'balloon_screen.dart';
 import 'count_screen.dart';
 import 'picker_screen.dart';
@@ -101,9 +102,10 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () => _confirmReset(context),
+              key: const Key('parents'),
+              onPressed: () => openParents(context),
               child: const Text(
-                'Parents: reset progress',
+                'For parents',
                 style: TextStyle(color: Color(0x993B2A7A), decoration: TextDecoration.underline, fontSize: 15),
               ),
             ),
@@ -111,21 +113,6 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _confirmReset(BuildContext context) async {
-    final progress = ProgressScope.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset all stars?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Reset')),
-        ],
-      ),
-    );
-    if (ok ?? false) progress.reset();
   }
 }
 
