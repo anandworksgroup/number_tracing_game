@@ -1,7 +1,8 @@
 # Google Play store listing
 
 Draft copy and asset checklist for the Play Console (*Grow → Store presence → Main store listing*).
-Rebuild the graphics with `npm run store-assets` after changing the app.
+Rebuild the graphics with `npm run store-assets` after changing the app. It takes the
+screenshots from the Flutter app.
 
 ## App details
 
@@ -95,6 +96,6 @@ for apps that target children.
 | Target API level | Targets Android 16 (API 36), which meets Play's current requirement. |
 | 64-bit and 16 KB pages | Flutter release builds include 64-bit code and support 16 KB memory pages. The plugins add no native libraries. |
 | Content rating | Complete the IARC questionnaire: no violence, fear, language, gambling, user interaction or data sharing, so expect *Everyone* / *PEGI 3*. |
-| Store graphics | Original artwork. Screenshots come from the web build, which uses the same layouts, but a few buttons show emoji where the Android app uses icons. Retake them from the Android app before launch if you want an exact match. |
+| Store graphics | Original artwork. Screenshots are taken from the Flutter app itself (the build you upload), on phone, 7-inch and 10-inch tablet screen sizes. |
 | Intellectual property | Original name, art, sounds and code, with no references to other apps in the store listing. The bundled Baloo 2 font is under the SIL Open Font License. |
 

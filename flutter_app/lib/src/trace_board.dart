@@ -68,6 +68,8 @@ class _TraceBoardState extends State<TraceBoard> with SingleTickerProviderStateM
   }
 
   void _tick(Duration elapsed) {
+    // Particle steps are in 60 fps frames, so sparkles look the same at any frame rate.
+    final k = min(3.0, (elapsed - _now).inMicroseconds / 1e6 * 60);
     _now = elapsed;
     if (_demoPending) {
       _demoPending = false;
@@ -75,9 +77,9 @@ class _TraceBoardState extends State<TraceBoard> with SingleTickerProviderStateM
     }
     if (_demoStart != null && _demoFraction() > 1.35) _demoStart = null;
     for (final p in _particles) {
-      p.pos += p.vel;
-      p.vel += const Offset(0, 0.04);
-      p.life -= 0.03;
+      p.pos += p.vel * k;
+      p.vel += Offset(0, 0.04 * k);
+      p.life -= 0.03 * k;
     }
     _particles.removeWhere((p) => p.life <= 0);
     setState(() {});

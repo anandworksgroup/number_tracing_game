@@ -10,13 +10,15 @@
 //   store/phone/*.jpg                                        1080 × 1920 phone screenshots
 //   store/tablet-7/*.jpg, store/tablet-10/*.jpg              7" and 10" tablet screenshots
 //
-// Screenshots are taken from the real app, driven by Playwright.
+// Screenshots are taken from the Flutter app (built for the web, driven by Playwright),
+// so `flutter` must be on PATH, or flutter_app/build/web must already be built.
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright';
-import { DIGITS, DIGIT_ADVANCE } from '../js/digits.js';
+import { execFileSync } from 'node:child_process';
+import { chromium, devices } from 'playwright';
+import { DIGITS, DIGIT_ADVANCE, layoutNumber } from '../js/digits.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FONT_DIR = path.join(ROOT, 'node_modules/@fontsource/baloo-2/files');
@@ -33,12 +35,18 @@ const TYPES = {
   '.png': 'image/png',
   '.webmanifest': 'application/manifest+json',
   '.woff2': 'font/woff2',
+  '.json': 'application/json',
+  '.wasm': 'application/wasm',
+  '.mjs': 'text/javascript',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.wav': 'audio/wav',
 };
 
-function serve() {
+function serve(root = ROOT) {
   const server = http.createServer(async (req, res) => {
     const p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-    const [dir, rel] = p.startsWith('/__fonts/') ? [FONT_DIR, p.slice(9)] : [ROOT, p === '/' ? 'index.html' : p];
+    const [dir, rel] = p.startsWith('/__fonts/') ? [FONT_DIR, p.slice(9)] : [root, p === '/' ? 'index.html' : p];
     const file = path.join(dir, rel);
     try {
       if (!file.startsWith(dir)) throw new Error('outside root');
@@ -134,17 +142,17 @@ async function renderSvg(browser, svg, size, file, { transparent }) {
 }
 
 // ---------- app screenshots ----------
+//
+// Screenshots come from the Flutter app (flutter_app/), the version published on Google Play.
+// It is built for the web and run in Chromium with an Android user agent, so Flutter uses its
+// Android look and behaviour; the web build renders with the same engine, fonts and emoji as
+// the Android app, which runs full screen without system bars.
 
-const SEEDED_RANDOM = `(() => {
-  let a = 20240924;
-  Math.random = () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-})();`;
+const FLUTTER_APP = path.join(ROOT, 'flutter_app');
+const FLUTTER_WEB = path.join(FLUTTER_APP, 'build/web');
+const ANDROID_UA = devices['Pixel 7'].userAgent;
 
+// Saved progress in the format shared_preferences uses on the web.
 const PROGRESS = {
   stars: { 0: 3, 1: 3, 2: 3, 3: 2, 4: 3, 5: 1, 6: 2, 7: 3, 8: 1 },
   trophies: 4,
@@ -152,12 +160,56 @@ const PROGRESS = {
   voice: true,
 };
 
-const strokesOnScreen = (page) =>
-  page.evaluate(() => {
-    const t = window.__app.tracer;
-    const r = t.canvas.getBoundingClientRect();
-    return t.layout.strokes.map((pts) => pts.map(([x, y]) => [r.left + t.ox + x * t.s, r.top + t.oy + y * t.s]));
+function buildFlutterWeb() {
+  try {
+    execFileSync('flutter', ['build', 'web', '--release', '--no-web-resources-cdn'], { cwd: FLUTTER_APP, stdio: 'inherit' });
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e;
+    console.warn('flutter not found on PATH; using the existing flutter_app/build/web');
+  }
+}
+
+async function openApp(browser, base, { vw, vh, dpr }) {
+  const ctx = await browser.newContext({
+    viewport: { width: vw, height: vh },
+    deviceScaleFactor: dpr,
+    userAgent: ANDROID_UA,
+    locale: 'en-US',
+    serviceWorkers: 'block',
+    // Flutter's web engine downloads its emoji font from fonts.gstatic.com; don't let a
+    // TLS-inspecting proxy break that. (On Android the emoji come from the system font.)
+    ignoreHTTPSErrors: true,
   });
+  await ctx.addInitScript((p) => localStorage.setItem('flutter.trace123', JSON.stringify(JSON.stringify(p))), PROGRESS);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(base + '/');
+  // Turn on Flutter's accessibility tree so buttons can be found by their labels.
+  await page.locator('flt-semantics-placeholder').click({ force: true, timeout: 60000 });
+  await page.getByRole('button', { name: 'Trace', exact: true }).waitFor();
+  await page.waitForTimeout(1500); // let emoji and fonts finish loading
+  return { ctx, page, errors };
+}
+
+const button = (page, name) => page.getByRole('button', { name, exact: true });
+
+async function tap(page, name, wait = 900) {
+  await button(page, name).click();
+  await page.waitForTimeout(wait);
+}
+
+// Screen positions of a number's strokes on the tracing board, using the same fit as the app.
+async function strokesOnScreen(page, n) {
+  const label = page.getByText(`Tracing board: trace the number ${n}`, { exact: true });
+  const r = await page.locator('flt-semantics').filter({ has: label }).last().boundingBox();
+  const layout = layoutNumber(n);
+  const pad = 22;
+  const s = Math.min(r.width / (layout.width + pad * 2), r.height / (layout.height + pad * 2));
+  const ox = r.x + (r.width - layout.width * s) / 2;
+  const oy = r.y + (r.height - layout.height * s) / 2;
+  return layout.strokes.map((pts) => pts.map(([x, y]) => [ox + x * s, oy + y * s]));
+}
 
 // Drag the mouse along a stroke; `upto` < 1 stops part way with the finger still down.
 async function drag(page, pts, upto = 1) {
@@ -166,78 +218,63 @@ async function drag(page, pts, upto = 1) {
   await page.mouse.down();
   for (let i = 0; i <= end; i += 3) await page.mouse.move(...pts[i]);
   await page.mouse.move(...pts[end]);
-  if (upto >= 1) await page.mouse.up();
+  if (upto >= 1) {
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+  }
 }
 
-const openTrace = (page, n) => page.evaluate((n) => window.__app.openTrace(n), n);
-const show = (page, name) => page.evaluate((name) => window.__app.show(name), name);
+async function openNumber(page, n, wait = 1200) {
+  await tap(page, 'Trace');
+  await page.getByRole('button', { name: new RegExp(`^Number ${n},`) }).click();
+  await page.waitForTimeout(wait);
+}
 
 const SCENES = {
   async home(page) {
-    await page.waitForTimeout(700);
+    // The home screen is the first thing shown, so give its emoji time to download.
+    await page.waitForTimeout(4000);
   },
   async trace(page) {
-    await openTrace(page, 2);
-    await page.waitForTimeout(300);
-    const [stroke] = await strokesOnScreen(page);
+    await openNumber(page, 2);
+    const [stroke] = await strokesOnScreen(page, 2);
     await drag(page, stroke, 0.62);
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(150);
   },
   async guide(page) {
-    await openTrace(page, 8);
-    await page.waitForTimeout(300);
-    // Freeze the demo hand part way along the stroke.
-    await page.evaluate(() => {
-      const t = window.__app.tracer;
-      t.stop();
-      const now = performance.now();
-      const dur = Math.max(1200, t.stroke.length * 9);
-      t.demo = { t0: now - dur * 0.42 };
-      t.draw(now);
-    });
+    // The demo hand plays when a number opens; catch it part way along the stroke.
+    // Open the number once first so the hand emoji is already loaded.
+    await openNumber(page, 8, 2500);
+    await tap(page, 'Back', 900);
+    await page.getByRole('button', { name: /^Number 8,/ }).click();
+    await page.waitForTimeout(1150);
   },
   async reward(page) {
-    await openTrace(page, 4);
-    await page.waitForTimeout(300);
-    for (const stroke of await strokesOnScreen(page)) await drag(page, stroke);
-    await page.waitForTimeout(4900); // counting animation
+    await openNumber(page, 4);
+    for (const stroke of await strokesOnScreen(page, 4)) await drag(page, stroke);
+    await page.waitForTimeout(5200); // counting animation
   },
   async count(page) {
-    await show(page, 'count');
-    // Re-roll until there are enough objects to make a busy picture.
-    while ((await page.$$('.count-obj')).length < 6) await page.evaluate(() => window.__app.counter.start());
-    await page.waitForTimeout(900);
-    const objs = await page.$$('.count-obj');
-    for (const o of objs.slice(0, Math.ceil(objs.length * 0.6))) await o.click();
-    await page.waitForTimeout(500);
+    await tap(page, 'Count');
+    // Re-enter until there are enough objects to make a busy picture.
+    for (let i = 0; i < 20 && (await button(page, 'Tap to count').count()) < 6; i++) {
+      await tap(page, 'Back', 700);
+      await tap(page, 'Count');
+    }
+    const n = await button(page, 'Tap to count').count();
+    for (let i = 0; i < Math.ceil(n * 0.6); i++) await button(page, 'Tap to count').first().click();
+    await page.waitForTimeout(1200);
   },
   async pop(page) {
-    await show(page, 'pop');
-    await page.waitForTimeout(5200);
+    await tap(page, 'Pop', 5600);
   },
   async pick(page) {
-    await show(page, 'pick');
-    await page.waitForTimeout(600);
+    await tap(page, 'Trace', 1200);
   },
 };
 
-async function captureScene(browser, base, name, { vw, vh, dpr }) {
-  const ctx = await browser.newContext({
-    viewport: { width: vw, height: vh },
-    deviceScaleFactor: dpr,
-    isMobile: true,
-    hasTouch: true,
-    serviceWorkers: 'block',
-  });
-  await ctx.route('https://fonts.googleapis.com/**', (r) => r.fulfill({ contentType: 'text/css', body: fontCss(base) }));
-  await ctx.route('https://fonts.gstatic.com/**', (r) => r.abort());
-  await ctx.addInitScript(SEEDED_RANDOM);
-  await ctx.addInitScript((p) => localStorage.setItem('trace123', JSON.stringify(p)), PROGRESS);
-  const page = await ctx.newPage();
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto(base + '/');
-  await page.evaluate(() => Promise.all([500, 700, 800].map((w) => document.fonts.load(`${w} 20px "Baloo 2"`))));
+async function captureScene(browser, base, name, dev) {
+  const { ctx, page, errors } = await openApp(browser, base, dev);
   await SCENES[name](page);
   const png = await page.screenshot();
   await ctx.close();
@@ -342,9 +379,13 @@ const DEVICES = [
 ];
 
 async function main() {
+  buildFlutterWeb();
   const server = await serve();
+  const appServer = await serve(FLUTTER_WEB);
   const base = `http://127.0.0.1:${server.address().port}`;
-  const browser = await chromium.launch();
+  const appBase = `http://127.0.0.1:${appServer.address().port}`;
+  // Software WebGL, for machines without a GPU (Flutter renders with WebGL).
+  const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader'] });
   try {
     await fs.mkdir(STORE, { recursive: true });
 
@@ -370,12 +411,15 @@ async function main() {
 
     let phoneTrace;
     for (const dev of DEVICES) {
+      // Capture everything first so a failure leaves the existing screenshots untouched.
+      const shots = [];
+      for (const name of dev.slides) shots.push(await captureScene(browser, appBase, name, dev));
       const dir = path.join(STORE, dev.dir);
       await fs.rm(dir, { recursive: true, force: true });
       await fs.mkdir(dir, { recursive: true });
       for (const [i, name] of dev.slides.entries()) {
         const [, title, sub, c1, c2] = SLIDES.find((s) => s[0] === name);
-        const shot = await captureScene(browser, base, name, dev);
+        const shot = shots[i];
         if (dev.dir === 'phone' && name === 'trace') phoneTrace = shot;
         const file = path.join(dir, `${String(i + 1).padStart(2, '0')}-${name}.jpg`);
         await renderHtml(browser, slideHtml({ W: dev.W, H: dev.H, title, sub, c1, c2, shot, base }), dev.W, dev.H, file);
@@ -388,6 +432,7 @@ async function main() {
   } finally {
     await browser.close();
     server.close();
+    appServer.close();
   }
 }
 

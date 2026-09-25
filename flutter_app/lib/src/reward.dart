@@ -275,6 +275,7 @@ class _ConfettiState extends State<Confetti> with SingleTickerProviderStateMixin
   final _bits = <_Bit>[];
   Size _size = Size.zero;
   bool _spawned = false;
+  Duration? _last;
 
   @override
   void initState() {
@@ -304,16 +305,19 @@ class _ConfettiState extends State<Confetti> with SingleTickerProviderStateMixin
     }
   }
 
-  void _tick(Duration _) {
+  void _tick(Duration elapsed) {
+    // Steps are in 60 fps frames, so the confetti moves at the same speed at any frame rate.
+    final k = _last == null ? 1.0 : min(3.0, (elapsed - _last!).inMicroseconds / 1e6 * 60);
+    _last = elapsed;
     if (_size == Size.zero) return;
     if (!_spawned) {
       _spawned = true;
       _spawn();
     }
     for (final b in _bits) {
-      b.pos += b.vel;
-      b.vel = Offset(b.vel.dx * 0.99, b.vel.dy + 0.35);
-      b.rot += b.spin;
+      b.pos += b.vel * k;
+      b.vel = Offset(b.vel.dx * pow(0.99, k), b.vel.dy + 0.35 * k);
+      b.rot += b.spin * k;
     }
     _bits.removeWhere((b) => b.pos.dy > _size.height + 30);
     if (_bits.isEmpty) _ticker.stop();

@@ -39,11 +39,14 @@ You can host it on any static web server, for example GitHub Pages.
 ```bash
 npm install                  # dev tools: Playwright and the Baloo 2 font
 npx playwright install chromium   # first time only, if Chromium isn't installed yet
-npm run store-assets
+npm run store-assets         # needs `flutter` on PATH (or a prebuilt flutter_app/build/web)
 ```
 
-`tools/store-assets.mjs` draws the app icon from the same stroke paths the child traces, then
-drives the real app with Playwright to take screenshots. It writes:
+`tools/store-assets.mjs` draws the app icon from the same stroke paths the child traces. It then
+builds the Flutter app (the version published on Google Play) for the web and drives it with
+Playwright to take the screenshots. It runs with an Android user agent, so Flutter uses its
+Android look and behaviour, and the web build renders with the same engine, fonts and emoji as
+the Android app. It writes:
 
 - `icons/`: app icons (`icon.svg`, `icon-192.png`, `icon-512.png`, `maskable-512.png`)
 - `store/icon-512.png`: Play Store icon

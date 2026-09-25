@@ -189,48 +189,54 @@ class _CountObject extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final counted = number != null;
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: counted ? 'Counted $number' : 'Tap to count',
+      excludeSemantics: true,
       onTap: onTap,
-      child: AnimatedScale(
-        scale: counted ? 0.92 : 1,
-        duration: const Duration(milliseconds: 150),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: size,
-              height: size,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: counted ? const Color(0xFFFFF4C2) : const Color(0xBFFFFFFF),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: cardShadow,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedScale(
+          scale: counted ? 0.92 : 1,
+          duration: const Duration(milliseconds: 150),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: size,
+                height: size,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: counted ? const Color(0xFFFFF4C2) : const Color(0xBFFFFFFF),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: cardShadow,
+                ),
+                child: Emoji(emoji, size: size * 0.6),
               ),
-              child: Emoji(emoji, size: size * 0.6),
-            ),
-            if (counted)
-              Positioned(
-                top: -10,
-                right: -8,
-                child: PopIn(
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(color: purple, shape: BoxShape.circle),
-                    child: Text(
-                      '$number',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        height: 1.2,
+              if (counted)
+                Positioned(
+                  top: -10,
+                  right: -8,
+                  child: PopIn(
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(color: purple, shape: BoxShape.circle),
+                      child: Text(
+                        '$number',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

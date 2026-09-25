@@ -66,6 +66,11 @@ the Play Console.
 - **App icons:** `npm run store-assets` in the repo root renders `assets/icon/*.png`, then
   `dart run flutter_launcher_icons` here writes the Android (adaptive), iOS and web icons.
 - **Sound effects:** `dart run tool/gen_sounds.dart`
+- **Store screenshots:** `npm run store-assets` in the repo root builds this app for the web and
+  captures the phone and tablet screenshots from it.
+
+On tablets the whole UI is laid out for a 400-point-wide screen and scaled up
+(`TabletScale` in `lib/src/app.dart`), so buttons and numbers fill the screen.
 
 ## Code layout
 

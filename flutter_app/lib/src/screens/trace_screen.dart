@@ -127,11 +127,15 @@ class _TraceScreenState extends State<TraceScreen> {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(24),
-                          child: TraceBoard(
-                            key: const Key('trace-board'),
-                            logic: _logic,
-                            color: _color,
-                            demoKey: _demoKey,
+                          child: Semantics(
+                            container: true,
+                            label: 'Tracing board: trace the number $n',
+                            child: TraceBoard(
+                              key: const Key('trace-board'),
+                              logic: _logic,
+                              color: _color,
+                              demoKey: _demoKey,
+                            ),
                           ),
                         ),
                       ),
@@ -174,11 +178,16 @@ class _TraceScreenState extends State<TraceScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      for (final c in crayons)
+                      for (final (i, c) in crayons.indexed)
                         Flexible(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: _Crayon(color: c, active: c == _color, onTap: () => setState(() => _color = c)),
+                            child: _Crayon(
+                              name: crayonNames[i],
+                              color: c,
+                              active: c == _color,
+                              onTap: () => setState(() => _color = c),
+                            ),
                           ),
                         ),
                     ],
@@ -220,7 +229,8 @@ class _SideButton extends StatelessWidget {
 }
 
 class _Crayon extends StatelessWidget {
-  const _Crayon({required this.color, required this.active, required this.onTap});
+  const _Crayon({required this.name, required this.color, required this.active, required this.onTap});
+  final String name;
   final Color color;
   final bool active;
   final VoidCallback onTap;
@@ -229,7 +239,7 @@ class _Crayon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
-      semanticLabel: 'Crayon colour',
+      semanticLabel: '$name crayon${active ? ', selected' : ''}',
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         transform: Matrix4.translationValues(0, active ? -8 : 0, 0),

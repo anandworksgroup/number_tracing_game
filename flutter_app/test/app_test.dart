@@ -11,11 +11,17 @@ import 'package:number_tracing_game/src/screens/count_screen.dart';
 import 'package:number_tracing_game/src/trace_board.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<Progress> pumpApp(WidgetTester tester, {Widget? home, Map<String, Object> saved = const {}}) async {
+Future<Progress> pumpApp(
+  WidgetTester tester, {
+  Widget? home,
+  Map<String, Object> saved = const {},
+  Size physicalSize = const Size(1080, 1920),
+  double devicePixelRatio = 3,
+}) async {
   Audio.enabled = false;
   SharedPreferences.setMockInitialValues(saved);
-  tester.view.physicalSize = const Size(1080, 1920);
-  tester.view.devicePixelRatio = 3;
+  tester.view.physicalSize = physicalSize;
+  tester.view.devicePixelRatio = devicePixelRatio;
   addTearDown(tester.view.reset);
   final progress = await Progress.load();
   await tester.pumpWidget(
@@ -45,10 +51,13 @@ Finder keyStartsWith(String prefix, {String? except}) => find.byWidgetPredicate(
 /// Drags a finger along every stroke of the number on the board.
 Future<void> traceBoard(WidgetTester tester, int n) async {
   final board = find.byKey(const Key('trace-board'));
-  final origin = tester.getTopLeft(board);
+  // The board may be scaled up on tablets: map its local layout to screen coordinates.
+  final rect = tester.getRect(board);
+  final local = tester.getSize(board);
+  final k = rect.width / local.width;
   final layout = layoutNumber(n);
-  final fit = fitLayout(tester.getSize(board), layout);
-  Offset screen(Offset p) => origin + fit.offset + p * fit.scale;
+  final fit = fitLayout(local, layout);
+  Offset screen(Offset p) => rect.topLeft + (fit.offset + p * fit.scale) * k;
   for (final stroke in layout.strokes) {
     final g = await tester.startGesture(screen(stroke.first));
     for (var i = 0; i < stroke.length; i += 3) {
@@ -100,6 +109,31 @@ void main() {
     await settle(tester);
     expect(find.byKey(const Key('reward-title')), findsNothing);
     expect(tester.widget<Text>(find.byKey(const Key('trace-title'))).data, '5 · five');
+  });
+
+  testWidgets('on a 10-inch tablet the UI is scaled up and tracing still works', (tester) async {
+    // 1600 × 2560 pixels at 2× = 800 × 1280 logical pixels.
+    final progress = await pumpApp(tester, physicalSize: const Size(1600, 2560), devicePixelRatio: 2);
+    expect(TabletScale.scaleFor(const Size(800, 1280)), 2);
+    final trace = tester.getRect(find.byKey(const Key('go-trace')));
+    expect(trace.width, greaterThan(600)); // a 360-wide button drawn at 2×
+
+    await tester.tap(find.byKey(const Key('go-trace')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('tile-7')));
+    await settle(tester);
+    await traceBoard(tester, 7);
+    await settle(tester);
+    expect(tester.widget<Text>(find.byKey(const Key('reward-title'))).data, 'Seven!');
+    expect(progress.stars[7], 3);
+    await tester.pump(const Duration(seconds: 7)); // let the counting reward finish
+  });
+
+  test('phones are not scaled; tablets are', () {
+    expect(TabletScale.scaleFor(const Size(360, 640)), 1);
+    expect(TabletScale.scaleFor(const Size(412, 915)), 1);
+    expect(TabletScale.scaleFor(const Size(600, 960)), 1.5);
+    expect(TabletScale.scaleFor(const Size(1280, 800)), 2);
   });
 
   testWidgets('leaving the trace screen right after finishing shows no reward', (tester) async {

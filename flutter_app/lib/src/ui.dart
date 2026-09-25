@@ -23,6 +23,8 @@ const crayons = [
   Color(0xFFFF6FB5),
 ];
 
+const crayonNames = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple', 'Pink'];
+
 const cardShadow = [BoxShadow(color: Color(0x2E3B2A7A), offset: Offset(0, 6))];
 
 Color darker(Color c, [double amount = 0.3]) => Color.lerp(c, Colors.black, amount)!;
@@ -270,9 +272,13 @@ class _PopInState extends State<PopIn> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    Future.delayed(widget.delay, () {
-      if (mounted) _c.forward();
-    });
+    if (widget.delay == Duration.zero) {
+      _c.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) _c.forward();
+      });
+    }
   }
 
   @override
